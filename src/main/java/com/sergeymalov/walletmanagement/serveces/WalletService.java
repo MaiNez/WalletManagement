@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import static com.sergeymalov.walletmanagement.dto.OperationTypeEnum.*;
 
@@ -32,20 +33,19 @@ public class WalletService implements ChangeAmountService <WalletDto>{
     }
 
 
-
     @Override
-    public void changeAmount(WalletDto walletDto) {
-        WalletDto wallet = getById(walletDto.getWalletId());
-
-        if(walletDto.getOperationType().equals(DEPOSIT)){
-            wallet.setAmount(wallet.getAmount().add(walletDto.getAmount()));
-            repository.save(mapToEntity(wallet));
+    @Transactional
+    public boolean changeAmount(WalletDto walletDto) {
+        if (walletDto.getOperationType().equals(DEPOSIT)) {
+            repository.incrementAmount(walletDto.getWalletId(), walletDto.getAmount());
+            return true;
+        } else if (walletDto.getOperationType().equals(WITHDRAW)) {
+            int updated = repository.decrementAmount(walletDto.getWalletId(), walletDto.getAmount());
+            return updated > 0;
         }
-        if(walletDto.getOperationType().equals(WITHDRAW)){
-            wallet.setAmount(wallet.getAmount().subtract(walletDto.getAmount()));
-            repository.save(mapToEntity(wallet));
-        }
+        return false;
     }
+
 
     public static WalletDto mapToDto(Wallet wallet){
         WalletDto walletDto = new WalletDto();
@@ -53,11 +53,4 @@ public class WalletService implements ChangeAmountService <WalletDto>{
         walletDto.setAmount(wallet.getAmount());
         return walletDto;
     }
-    public static Wallet mapToEntity(WalletDto walletDto){
-        Wallet wallet = new Wallet();
-        wallet.setWalletId(walletDto.getWalletId());
-        wallet.setAmount(walletDto.getAmount());
-        return wallet;
-    }
-
 }

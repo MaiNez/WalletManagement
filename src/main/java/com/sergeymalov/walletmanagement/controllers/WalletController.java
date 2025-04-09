@@ -26,7 +26,4 @@ public class WalletController {
     public BigDecimal GetWalletById(@PathVariable UUID id){
         return walletService.getAmount(id);
     }
-
-
-
 }
